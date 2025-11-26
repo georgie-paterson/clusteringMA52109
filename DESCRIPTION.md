@@ -1,171 +1,35 @@
+# cluster_maker Package — Description and Module Overview
 
-# cluster_maker: A Lightweight Framework for Cluster Simulation and Analysis
+The `cluster_maker` package is a small, modular Python library designed to demonstrate and support teaching of clustering workflows in data science. Its purpose is to show every stage of a full clustering pipeline in a clear and accessible way, beginning with data preparation and ending with visualisation and export of results. The system is organised into several separate modules, each handling one specific part of the workflow, and these modules combine to form a complete clustering process when used together.
 
-`cluster_maker` is a small Python package designed to support teaching and assessment in data science and introductory machine-learning modules.  
-It provides tools to:
+## Package Structure
 
-- define cluster centres  
-- simulate synthetic clustered data  
-- preprocess and validate features  
-- run clustering algorithms  
-- evaluate clustering performance  
-- visualise cluster assignments  
-- export results  
+The package consists of the following files: `__init__.py`, `algorithms.py`, `data_analyser.py`, `data_exporter.py`, `dataframe_builder.py`, `evaluation.py`, `interface.py`, `plotting_clustered.py`, and `preprocessing.py`. Each file contributes a distinct component of the clustering workflow. The overall design encourages modularity and teaches how real-world projects separate functionality into focused parts.
 
-The package is modular, easy to read, and structured to demonstrate a full clustering workflow from start to finish.
+## Module Descriptions
 
----
+The `__init__.py` file sets up the package and exposes the main public functions so that users do not need to import individual modules manually. This allows simple import statements such as `from cluster_maker import run_clustering`.
 
-## 1. Overview of the Clustering Workflow
+The `algorithms.py` module contains the actual clustering algorithms. It includes a simple custom implementation of the K-Means algorithm which assigns points to centroids and updates them iteratively, and it also contains a wrapper around scikit-learn’s KMeans implementation. These two approaches allow both educational exploration and comparison against a standard library version.
 
-A typical run of `cluster_maker` follows these steps:
+The `data_analyser.py` module provides utility functions for examining data. Its purpose is to support inspection, summarisation, and optional analysis of datasets before or after clustering. This module is useful for exploring distributions or understanding properties of the data that has been clustered.
 
-1. **Load a CSV dataset**
-2. **Select appropriate numeric features**
-3. **Standardise the data (optional)**
-4. **Cluster the data using KMeans**
-5. **Compute evaluation metrics (inertia, silhouette)**
-6. **Produce diagnostic plots**
-7. **Save clustered data to disk**
+The `data_exporter.py` module handles the exporting of results. It contains a function that writes pandas DataFrames, including cluster labels if present, to a CSV file. This allows the clustered dataset to be saved and used outside the program.
 
-All of these steps are orchestrated by the high-level function  
-`run_clustering()` inside the package.
+The `dataframe_builder.py` module is responsible for constructing artificial clustered datasets. It includes functionality to define a table of cluster centres and then simulate noisy data around those centres. This is particularly helpful for testing algorithms or demonstrating how clustering behaves on manufactured datasets. The module returns simulated points and also provides the true cluster label for each generated point.
 
-The included demo script (`demo/cluster_analysis.py`) demonstrates this workflow end-to-end using an input CSV file.
+The `evaluation.py` module implements the metrics required to assess clustering quality. It calculates inertia, which measures the compactness of clusters, and the silhouette score, which evaluates how well each point fits within its assigned cluster relative to others. It also supports the elbow method by computing inertia for a range of cluster counts, which helps determine an appropriate value of k.
 
----
+The `interface.py` module acts as the high-level controller for the entire package. It contains the `run_clustering` function, which orchestrates the full workflow. This function loads the input CSV file, selects and validates features, optionally standardises them, runs the chosen clustering algorithm, computes evaluation metrics, generates plots, and saves the final labelled dataset. It returns a dictionary containing all results, including figures and evaluation measurements. This file represents the central engine that binds all other modules together.
 
-## 2. Module-by-Module Breakdown
+The `plotting_clustered.py` module generates visualisations. It creates a 2D scatter plot of clustered data, marking cluster centroids, and also produces an elbow plot when requested. These plots are returned as matplotlib figure objects and are saved by the demo script, making the results easy to inspect.
 
-Below is a summary of the package’s main components and what each part does.
+The `preprocessing.py` module handles preparation of the data prior to clustering. It verifies that selected features exist and are numeric, returning a clean DataFrame of those features. It also standardises numerical values so that all features have comparable scales, which improves clustering performance and prevents features with larger numeric ranges from dominating the algorithm.
 
----
+## How the Modules Work Together
 
-### 2.1 dataframe_builder
+A typical use of the package begins with the loading of a CSV file through the `run_clustering` function in `interface.py`. The chosen feature columns are passed through the preprocessing module to ensure they are valid and numerical, and they may be standardised. The processed data is then clustered using the algorithms provided in `algorithms.py`. After clustering, the evaluation module measures the quality of the result, and the plotting module produces visual output that helps interpret the clustering behaviour. Finally, the data exporter saves the labelled dataset, and additional analytical functions may be applied through `data_analyser.py`.
 
-This module is responsible for defining cluster centres and generating synthetic data.
+## Conclusion
 
-#### `define_dataframe_structure(column_specs)`  
-Creates a dataframe where:
-
-- each column corresponds to a feature  
-- each row is a cluster centre  
-- values come from the `"reps"` lists in `column_specs`
-
-Used primarily for simulation or testing.
-
-#### `simulate_data(seed_df, n_points, cluster_std, random_state)`  
-Generates synthetic points around the cluster centres using Gaussian noise.  
-Returns a dataframe with:
-
-- the simulated coordinates  
-- a `"true_cluster"` label  
-
----
-
-### 2.2 preprocessing
-
-Contains tools for preparing and validating data before clustering.
-
-#### `select_features(df, feature_cols)`  
-- Ensures the requested feature columns exist  
-- Verifies they are numeric  
-- Returns a clean dataframe of only the selected features  
-
-Errors are raised clearly if columns are missing or incompatible.
-
-#### `standardise_features(X)`  
-- Scales each feature to zero mean and unit variance  
-- Improves clustering performance, especially for KMeans  
-
----
-
-### 2.3 algorithms
-
-Implements clustering algorithms.
-
-#### `kmeans(X, k, random_state)`  
-A simple custom implementation of the KMeans algorithm.  
-Returns:
-
-- `labels`: cluster assignments  
-- `centroids`: resulting cluster centres  
-
-#### `sklearn_kmeans(X, k, random_state)`  
-Wrapper around `sklearn.cluster.KMeans` providing the same output format.
-
----
-
-### 2.4 evaluation
-
-Provides metrics and diagnostics that help assess clustering effectiveness.
-
-#### `compute_inertia(X, labels, centroids)`  
-Returns the total within-cluster sum of squared distances  
-(lower is better).
-
-#### `silhouette_score_sklearn(X, labels)`  
-Computes the silhouette coefficient when possible.
-
-#### `elbow_curve(X, k_values, random_state, use_sklearn)`  
-Calculates inertia for a range of *k* values, supporting elbow-curve analysis.
-
----
-
-### 2.5 plotting_clustered
-
-Generates visualisations for interpreting clustering results.
-
-#### `plot_clusters_2d(X, labels, centroids)`  
-Produces a 2D cluster scatter plot:
-- points coloured by cluster  
-- centroids marked separately  
-- returns a Matplotlib figure  
-
-#### `plot_elbow(k_values, inertias)`  
-Plots the elbow curve to help choose an appropriate *k*.
-
----
-
-### 2.6 data_exporter
-
-Contains lightweight tools for saving results.
-
-#### `export_to_csv(df, output_path, delimiter, include_index)`  
-Writes the dataframe (including cluster labels) to a CSV file.
-
----
-
-### 2.7 interface (optional)  
-In some versions, this module wraps the high-level API  
-but is not required for basic functionality.
-
----
-
-## 3. The Demo Script
-
-The demo file:
-demo/cluster_analysis.py
-provides a complete example of the package in action.
-
-### What the demo does:
-
-1. Loads an input CSV file from the command line  
-2. Displays summary information about the dataset  
-3. Selects the first two numeric columns  
-4. Validates them using `select_features`  
-5. Runs `run_clustering()` with:
-   - KMeans  
-   - k=3  
-   - standardisation enabled  
-   - elbow curve computation  
-6. Saves:
-   - `clustered_data.csv`  
-   - `cluster_plot.png`  
-   - `elbow_plot.png`  
-   into a folder named `demo_output/`
-
-### How to run the demo:
-
-```bash
-python -m demo.cluster_analysis path/to/data.csv
+Overall, the `cluster_maker` package provides a fully-worked example of a complete clustering system. Each module is focused on a clear individual responsibility, and together they form a coherent pipeline that is ideal for teaching and experimentation. The design encourages good programming practices such as modularity, clarity, and separation of concerns while demonstrating the full lifecycle of a clustering analysis workflow.
